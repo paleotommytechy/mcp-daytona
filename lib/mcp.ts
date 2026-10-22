@@ -22,6 +22,8 @@ const SERVER_INSTRUCTIONS =
 const REPOSITORY_PATTERN = /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/;
 const BRANCH_PATTERN = /^[A-Za-z0-9._/-]+$/;
 const SANDBOX_PATTERN = /^[A-Za-z0-9_.-]+$/;
+const MAX_CYCLE_TIMEOUT_SECONDS = process.env.VERCEL ? 240 : 3600;
+const DEFAULT_CYCLE_TIMEOUT_SECONDS = process.env.VERCEL ? 240 : 1200;
 const MAX_COMMAND_LENGTH = 20_000;
 const MAX_PATH_LENGTH = 512;
 const SNAPSHOTS = [
@@ -76,7 +78,7 @@ const RUN_CYCLE_TOOL: Tool = {
       },
       branch: { type: "string", default: "main", description: "Existing GitHub branch." },
       ...COMMAND_PROPERTIES,
-      timeout_seconds: { type: "integer", minimum: 60, maximum: 3600, default: 1200 },
+      timeout_seconds: { type: "integer", minimum: 60, maximum: MAX_CYCLE_TIMEOUT_SECONDS, default: DEFAULT_CYCLE_TIMEOUT_SECONDS },
       after_run: { type: "string", enum: ["delete", "keep", "stop", "pause"], default: "delete" },
       snapshot: { type: "string", enum: [...SNAPSHOTS], default: "daytona-medium" },
       auto_stop_minutes: {
@@ -103,7 +105,7 @@ const RERUN_CYCLE_TOOL: Tool = {
     properties: {
       sandbox_id: { type: "string" },
       ...COMMAND_PROPERTIES,
-      timeout_seconds: { type: "integer", minimum: 60, maximum: 3600, default: 1200 },
+      timeout_seconds: { type: "integer", minimum: 60, maximum: MAX_CYCLE_TIMEOUT_SECONDS, default: DEFAULT_CYCLE_TIMEOUT_SECONDS },
       sync_mode: {
         type: "string",
         enum: ["reset", "none"],
@@ -323,7 +325,7 @@ async function executeTool(name: string, args: JsonRecord): Promise<{ text: stri
       branch: parseBranch(args),
       command: parseCommand(args),
       workingPath: parseWorkingPath(args),
-      timeoutSeconds: integerValue(args, "timeout_seconds", 1200, 60, 3600),
+      timeoutSeconds: integerValue(args, "timeout_seconds", DEFAULT_CYCLE_TIMEOUT_SECONDS, 60, MAX_CYCLE_TIMEOUT_SECONDS),
       afterRun,
       snapshot,
       autoStopMinutes: integerValue(args, "auto_stop_minutes", 75, 0, 10080),
@@ -337,7 +339,7 @@ async function executeTool(name: string, args: JsonRecord): Promise<{ text: stri
       sandboxId: parseSandboxId(args),
       command: parseCommand(args),
       workingPath: parseWorkingPath(args),
-      timeoutSeconds: integerValue(args, "timeout_seconds", 1200, 60, 3600),
+      timeoutSeconds: integerValue(args, "timeout_seconds", DEFAULT_CYCLE_TIMEOUT_SECONDS, 60, MAX_CYCLE_TIMEOUT_SECONDS),
       syncMode: enumValue<SyncMode>(args, "sync_mode", ["reset", "none"], "reset"),
       afterRun: enumValue<AfterRun>(args, "after_run", ["delete", "keep", "stop", "pause"], "keep"),
     });
