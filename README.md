@@ -47,6 +47,20 @@ After a passing validation log has been reviewed, deploy with:
 pnpm run deploy
 ```
 
+## Vercel deployment (private, secure-by-default)
+
+For a Vercel deployment, use the built-in Next.js framework build (do **not** run the Cloudflare `deploy` script or use the Cloudflare-only domain in `wrangler.jsonc`).
+
+1. In Vercel Project Settings → Git, connect the writable fork `paleotommytechy/mcp-daytona` and use `main` as the production branch.
+2. Set these Production environment variables: `DAYTONA_API_KEY`, `GITHUB_APP_ID`, `GITHUB_APP_PRIVATE_KEY_BASE64`, and `MCP_BEARER_TOKEN`. Generate `MCP_BEARER_TOKEN` randomly and keep it private.
+3. The Vercel MCP route **fails closed** (HTTP 503) when `MCP_BEARER_TOKEN` is absent or shorter than 32 characters; wrong/missing bearer tokens return HTTP 401.
+4. Vercel Hobby functions have a 300-second limit. This repository defaults the MCP run timeout to 240 seconds and caps it at 240 seconds on Vercel; longer cycles need an asynchronous status/poll architecture, not a longer single HTTP request.
+5. Rotate any previously exposed Daytona credentials before a public deployment.
+
+**Authentication compatibility:** Static bearer auth is a temporary safety gate for clients that can send their own `Authorization: Bearer ...` header. ChatGPT's custom MCP connection does not accept arbitrary user-supplied static API keys; for ChatGPT, implement MCP OAuth 2.1 with an established identity provider (or use an approved secure tunnel) before enabling access. Never remove the auth guard to make tool discovery work. A GitHub App only authenticates GitHub repository access, not callers of the MCP endpoint.
+
+The existing Cloudflare-specific instructions below apply to the Cloudflare target only.
+
 ## Connect the private ChatGPT plugin
 
 Use the production MCP endpoint:
